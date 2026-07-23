@@ -296,8 +296,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label>目标链接 <span class="tip">用户点击卡片后跳转的网址</span></label>
-                    <input type="url" id="og-link" placeholder="https://123.com/" value="https://123.com/" oninput="updatePreview()">
+                    <label>卡片链接 <span class="tip">这个HTML页面的访问地址（微信点击后先进入此页）</span></label>
+                    <input type="url" id="og-link" placeholder="https://123.com/share.html" value="https://123.com/share.html" oninput="updatePreview()">
+                </div>
+
+                <div class="form-group">
+                    <label>跳转目标 <span class="tip">用户最终要去的页面（留空则显示按钮，不自动跳转）</span></label>
+                    <input type="url" id="og-target" placeholder="https://ai.bb.bj.cn/">
                 </div>
 
                 <div class="form-group">
@@ -425,7 +430,8 @@
         function generateOG() {
             const title = document.getElementById('og-title').value || '邀请你加入群聊';
             const desc = document.getElementById('og-desc').value || 'xxx邀请你加入减肥交流群，进入可查看详情。';
-            const link = document.getElementById('og-link').value || 'https://123.com/';
+            const link = document.getElementById('og-link').value || 'https://123.com/share.html';
+            const target = document.getElementById('og-target').value || '';
             const imgUrl = uploadedImageData || document.getElementById('og-image-url').value || '';
 
             if (!imgUrl && !uploadedImageData) {
@@ -439,31 +445,107 @@
                 imageForMeta = 'https://123.com/your-image-path.png'; // 提示用户替换
             }
 
-            const html = `<!DOCTYPE html>
+            let html;
+            if (target) {
+                // ===== 自动跳转模式 =====
+                html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
-    
+
     <!-- Open Graph 标签 - 微信分享卡片关键配置 -->
     <meta property="og:title" content="${escapeHtml(title)}">
     <meta property="og:description" content="${escapeHtml(desc)}">
     <meta property="og:image" content="${escapeHtml(imageForMeta)}">
     <meta property="og:url" content="${escapeHtml(link)}">
     <meta property="og:type" content="website">
-    
+
     <!-- 微博/QQ 兼容 -->
     <meta itemprop="name" content="${escapeHtml(title)}">
     <meta itemprop="description" content="${escapeHtml(desc)}">
     <meta itemprop="image" content="${escapeHtml(imageForMeta)}">
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="${escapeHtml(title)}">
     <meta name="twitter:description" content="${escapeHtml(desc)}">
     <meta name="twitter:image" content="${escapeHtml(imageForMeta)}">
-    
+
+    <!-- 自动跳转（0秒后跳转到目标页面） -->
+    <meta http-equiv="refresh" content="0;url=${escapeHtml(target)}">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .loading {
+            text-align: center;
+        }
+        .loading-spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading p { color: #999; font-size: 14px; }
+        .manual-link { display: none; margin-top: 15px; }
+        .manual-link a { color: #667eea; font-size: 14px; text-decoration: none; }
+        body:not(.jumped) .manual-link { display: block; }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <div class="loading-spinner"></div>
+        <p>正在跳转...</p>
+        <div class="manual-link">
+            <a href="${escapeHtml(target)}">点击手动跳转</a>
+        </div>
+    </div>
+    <script>
+        window.location.replace('${escapeHtml(target)}');
+        document.body.classList.add('jumped');
+    </script>
+</body>
+</html>`;
+            } else {
+                // ===== 按钮落地页模式 =====
+                html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(title)}</title>
+
+    <!-- Open Graph 标签 - 微信分享卡片关键配置 -->
+    <meta property="og:title" content="${escapeHtml(title)}">
+    <meta property="og:description" content="${escapeHtml(desc)}">
+    <meta property="og:image" content="${escapeHtml(imageForMeta)}">
+    <meta property="og:url" content="${escapeHtml(link)}">
+    <meta property="og:type" content="website">
+
+    <!-- 微博/QQ 兼容 -->
+    <meta itemprop="name" content="${escapeHtml(title)}">
+    <meta itemprop="description" content="${escapeHtml(desc)}">
+    <meta itemprop="image" content="${escapeHtml(imageForMeta)}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="${escapeHtml(title)}">
+    <meta name="twitter:description" content="${escapeHtml(desc)}">
+    <meta name="twitter:image" content="${escapeHtml(imageForMeta)}">
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -485,8 +567,7 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         .logo {
-            width: 100px;
-            height: 100px;
+            width: 100px; height: 100px;
             border-radius: 20px;
             margin-bottom: 20px;
             object-fit: cover;
@@ -505,11 +586,7 @@
             transition: transform 0.2s;
         }
         .btn:hover { transform: translateY(-2px); }
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #999;
-        }
+        .footer { margin-top: 20px; font-size: 12px; color: #999; }
     </style>
 </head>
 <body>
@@ -522,10 +599,11 @@
     </div>
 </body>
 </html>`;
+            }
 
             document.getElementById('og-code').textContent = html;
             document.getElementById('og-output').classList.add('active');
-            
+
             // 保存用于下载
             window.generatedHTML = html;
             window.generatedFileName = 'share-' + Date.now() + '.html';
