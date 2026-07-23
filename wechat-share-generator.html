@@ -1,0 +1,630 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信分享卡片生成器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .form-group label .tip {
+            font-weight: normal;
+            color: #999;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="url"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+        .file-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #666;
+            font-size: 14px;
+            transition: all 0.3s;
+            width: 100%;
+            text-align: center;
+        }
+        .file-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .preview-area {
+            margin-top: 15px;
+            display: none;
+        }
+        .preview-area.active { display: block; }
+        .preview-area img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .preview-area .img-url {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #667eea;
+            word-break: break-all;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .wechat-preview {
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .wechat-preview-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .wechat-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .wechat-card-content {
+            flex: 1;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .wechat-card-title {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .wechat-card-desc {
+            font-size: 12px;
+            color: #999;
+            margin-top: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .wechat-card-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .output-section {
+            display: none;
+            margin-top: 20px;
+        }
+        .output-section.active { display: block; }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: "Consolas", "Monaco", monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        .copy-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .copy-btn:hover { background: #45a049; }
+        .notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #856404;
+            line-height: 1.6;
+        }
+        .notice strong { color: #d63031; }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #f5f5f5;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .info-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>微信分享卡片生成器</h1>
+            <p>自定义标题、简介、LOGO，生成可在微信中分享的美丽卡片</p>
+        </div>
+
+        <div class="notice">
+            <strong>使用说明：</strong><br>
+            1. 下方填写分享信息，可实时预览微信卡片效果<br>
+            2. 支持两种方案：<strong>OG标签方案</strong>（简单，无需公众号）和 <strong>JS-SDK方案</strong>（功能完整，需公众号）<br>
+            3. 分享图片建议尺寸 300×300px，大小不超过 300KB<br>
+            4. 微信会缓存卡片信息，修改后可能需要 24-48 小时生效
+        </div>
+
+        <div class="card">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('og')">方案一：OG标签（简单）</button>
+                <button class="tab-btn" onclick="switchTab('sdk')">方案二：JS-SDK（完整）</button>
+            </div>
+
+            <!-- OG标签方案 -->
+            <div id="og-tab" class="tab-content active">
+                <div class="section-title">填写分享信息</div>
+                
+                <div class="form-group">
+                    <label>分享标题 <span class="tip">建议控制在 20 字以内</span></label>
+                    <input type="text" id="og-title" placeholder="例如：邀请你加入群聊" oninput="updatePreview()">
+                </div>
+
+                <div class="form-group">
+                    <label>分享简介 <span class="tip">建议控制在 50 字以内</span></label>
+                    <textarea id="og-desc" placeholder="例如：xxx邀请你加入减肥交流群，进入可查看详情。" oninput="updatePreview()"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>目标链接 <span class="tip">用户点击卡片后跳转的网址</span></label>
+                    <input type="url" id="og-link" placeholder="https://123.com/" value="https://123.com/" oninput="updatePreview()">
+                </div>
+
+                <div class="form-group">
+                    <label>分享图片 <span class="tip">支持上传或填写图片URL（建议 300×300px）</span></label>
+                    <div class="file-input-wrapper">
+                        <label class="file-btn" for="og-image-file">📷 点击上传图片</label>
+                        <input type="file" id="og-image-file" accept="image/*" onchange="handleImageUpload(this, 'og')">
+                    </div>
+                    <input type="text" id="og-image-url" placeholder="或输入图片URL地址" style="margin-top:10px;" oninput="updatePreview()">
+                    <div class="preview-area" id="og-image-preview">
+                        <img src="" alt="预览" id="og-preview-img">
+                        <div class="img-url" id="og-img-url-text"></div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="generateOG()">生成分享页面代码</button>
+
+                <div class="wechat-preview">
+                    <div class="wechat-preview-title">微信卡片效果预览</div>
+                    <div class="wechat-card">
+                        <div class="wechat-card-content">
+                            <div class="wechat-card-title" id="preview-title">邀请你加入群聊</div>
+                            <div class="wechat-card-desc" id="preview-desc">xxx邀请你加入减肥交流群，进入可查看详情。</div>
+                        </div>
+                        <img class="wechat-card-img" id="preview-img" src="https://via.placeholder.com/300" alt="LOGO">
+                    </div>
+                </div>
+
+                <div class="output-section" id="og-output">
+                    <div class="section-title" style="margin-top:30px;">生成的HTML代码</div>
+                    <p style="font-size:13px;color:#666;margin-bottom:10px;">将以下代码保存为 .html 文件，上传到你的服务器即可</p>
+                    <div class="code-block" id="og-code"></div>
+                    <button class="copy-btn" onclick="copyCode('og-code')">复制代码</button>
+                    <button class="copy-btn" style="background:#2196F3;" onclick="downloadHTML()">下载HTML文件</button>
+                </div>
+            </div>
+
+            <!-- JS-SDK方案 -->
+            <div id="sdk-tab" class="tab-content">
+                <div class="section-title">JS-SDK 配置信息</div>
+                
+                <div class="form-group">
+                    <label>公众号 AppID <span class="tip">微信公众平台获取</span></label>
+                    <input type="text" id="sdk-appid" placeholder="wx1234567890abcdef">
+                </div>
+
+                <div class="form-group">
+                    <label>分享标题</label>
+                    <input type="text" id="sdk-title" placeholder="自定义标题">
+                </div>
+
+                <div class="form-group">
+                    <label>分享描述</label>
+                    <textarea id="sdk-desc" placeholder="自定义描述"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>分享链接</label>
+                    <input type="url" id="sdk-link" placeholder="https://123.com/" value="https://123.com/">
+                </div>
+
+                <div class="form-group">
+                    <label>分享图片URL <span class="tip">必须是完整的HTTP地址，且域名需在JS安全域名内</span></label>
+                    <input type="text" id="sdk-imgurl" placeholder="https://123.com/logo.png">
+                </div>
+
+                <div class="notice" style="margin-top:10px;">
+                    <strong>注意：</strong>JS-SDK 方案需要后端配合生成签名（signature）。<br>
+                    以下为前端代码模板，需要替换接口地址。
+                </div>
+
+                <button class="btn-primary" onclick="generateSDK()">生成 JS-SDK 代码</button>
+
+                <div class="output-section" id="sdk-output">
+                    <div class="section-title" style="margin-top:30px;">JS-SDK 完整代码</div>
+                    <div class="code-block" id="sdk-code"></div>
+                    <button class="copy-btn" onclick="copyCode('sdk-code')">复制代码</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedImageData = '';
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        function handleImageUpload(input, type) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 500 * 1024) {
+                alert('图片大小不能超过500KB，建议300×300px');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImageData = e.target.result;
+                document.getElementById(type + '-image-url').value = '[已上传图片，使用Base64编码]';
+                const preview = document.getElementById(type + '-image-preview');
+                preview.classList.add('active');
+                document.getElementById(type + '-preview-img').src = e.target.result;
+                document.getElementById(type + '-img-url-text').textContent = '文件名: ' + file.name + ' (' + (file.size/1024).toFixed(1) + 'KB)';
+                updatePreview();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updatePreview() {
+            const title = document.getElementById('og-title').value || '邀请你加入群聊';
+            const desc = document.getElementById('og-desc').value || 'xxx邀请你加入减肥交流群，进入可查看详情。';
+            const imgUrl = uploadedImageData || document.getElementById('og-image-url').value || 'https://via.placeholder.com/300';
+
+            document.getElementById('preview-title').textContent = title;
+            document.getElementById('preview-desc').textContent = desc;
+            document.getElementById('preview-img').src = imgUrl;
+        }
+
+        function generateOG() {
+            const title = document.getElementById('og-title').value || '邀请你加入群聊';
+            const desc = document.getElementById('og-desc').value || 'xxx邀请你加入减肥交流群，进入可查看详情。';
+            const link = document.getElementById('og-link').value || 'https://123.com/';
+            const imgUrl = uploadedImageData || document.getElementById('og-image-url').value || '';
+
+            if (!imgUrl && !uploadedImageData) {
+                alert('请上传或填写分享图片！');
+                return;
+            }
+
+            // 如果上传了图片，需要转为线上URL提示
+            let imageForMeta = imgUrl;
+            if (uploadedImageData) {
+                imageForMeta = 'https://123.com/your-image-path.png'; // 提示用户替换
+            }
+
+            const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(title)}</title>
+    
+    <!-- Open Graph 标签 - 微信分享卡片关键配置 -->
+    <meta property="og:title" content="${escapeHtml(title)}">
+    <meta property="og:description" content="${escapeHtml(desc)}">
+    <meta property="og:image" content="${escapeHtml(imageForMeta)}">
+    <meta property="og:url" content="${escapeHtml(link)}">
+    <meta property="og:type" content="website">
+    
+    <!-- 微博/QQ 兼容 -->
+    <meta itemprop="name" content="${escapeHtml(title)}">
+    <meta itemprop="description" content="${escapeHtml(desc)}">
+    <meta itemprop="image" content="${escapeHtml(imageForMeta)}">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="${escapeHtml(title)}">
+    <meta name="twitter:description" content="${escapeHtml(desc)}">
+    <meta name="twitter:image" content="${escapeHtml(imageForMeta)}">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            object-fit: cover;
+        }
+        h1 { font-size: 22px; color: #333; margin-bottom: 12px; }
+        p { font-size: 15px; color: #666; line-height: 1.6; margin-bottom: 25px; }
+        .btn {
+            display: inline-block;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img class="logo" src="${escapeHtml(imageForMeta)}" alt="LOGO">
+        <h1>${escapeHtml(title)}</h1>
+        <p>${escapeHtml(desc)}</p>
+        <a class="btn" href="${escapeHtml(link)}">立即查看</a>
+        <div class="footer">分享自 123.com</div>
+    </div>
+</body>
+</html>`;
+
+            document.getElementById('og-code').textContent = html;
+            document.getElementById('og-output').classList.add('active');
+            
+            // 保存用于下载
+            window.generatedHTML = html;
+            window.generatedFileName = 'share-' + Date.now() + '.html';
+
+            if (uploadedImageData) {
+                alert('注意：您上传了本地图片，请将图片上传到服务器后，将代码中的图片地址替换为线上URL！');
+            }
+        }
+
+        function generateSDK() {
+            const appid = document.getElementById('sdk-appid').value;
+            const title = document.getElementById('sdk-title').value;
+            const desc = document.getElementById('sdk-desc').value;
+            const link = document.getElementById('sdk-link').value;
+            const imgUrl = document.getElementById('sdk-imgurl').value;
+
+            if (!appid || !title || !link || !imgUrl) {
+                alert('请填写完整信息！');
+                return;
+            }
+
+            const code = `<!-- 引入微信 JS-SDK -->
+<script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"><\/script>
+
+<script>
+// 1. 从后端获取签名配置
+fetch('/api/wx-signature?url=' + encodeURIComponent(location.href.split('#')[0]))
+    .then(r => r.json())
+    .then(config => {
+        // 2. 配置微信 JS-SDK
+        wx.config({
+            debug: false,
+            appId: '${appid}',
+            timestamp: config.timestamp,
+            nonceStr: config.nonceStr,
+            signature: config.signature,
+            jsApiList: [
+                'updateAppMessageShareData',
+                'updateTimelineShareData',
+                'onMenuShareAppMessage',
+                'onMenuShareTimeline'
+            ]
+        });
+
+        // 3. 设置分享内容
+        wx.ready(() => {
+            const shareData = {
+                title: '${escapeHtml(title)}',
+                desc: '${escapeHtml(desc)}',
+                link: '${escapeHtml(link)}',
+                imgUrl: '${escapeHtml(imgUrl)}',
+                success: () => console.log('分享成功'),
+                fail: (err) => console.log('分享失败', err)
+            };
+
+            // 分享给好友/群
+            wx.updateAppMessageShareData(shareData);
+
+            // 分享到朋友圈
+            wx.updateTimelineShareData({
+                title: '${escapeHtml(title)}',
+                link: '${escapeHtml(link)}',
+                imgUrl: '${escapeHtml(imgUrl)}',
+                success: () => console.log('朋友圈分享成功')
+            });
+        });
+
+        wx.error((err) => {
+            console.error('微信配置失败:', err);
+        });
+    });
+<\/script>`;
+
+            document.getElementById('sdk-code').textContent = code;
+            document.getElementById('sdk-output').classList.add('active');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyCode(id) {
+            const code = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('代码已复制到剪贴板！');
+            });
+        }
+
+        function downloadHTML() {
+            if (!window.generatedHTML) return;
+            const blob = new Blob([window.generatedHTML], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = window.generatedFileName || 'share-page.html';
+            a.click();
+        }
+    </script>
+</body>
+</html>
+
