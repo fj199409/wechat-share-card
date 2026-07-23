@@ -1,4 +1,4 @@
-# 微信分享卡片生成器
+﻿# 微信分享卡片生成器
 
 基于 Open Graph 协议和微信 JS-SDK 的分享卡片自定义工具，无需代码即可生成可在微信中分享的美丽卡片。
 
@@ -35,12 +35,12 @@
 
 ```
 微信卡片链接：https://your-domain.com/share.html  （含OG标签，供微信抓取）
-跳转目标：https://ai.bb.bj.cn/                     （用户最终到达的页面）
+跳转目标：https://123.com/                     （用户最终到达的页面）
 ```
 
 用户点击卡片后：
 - 微信先打开 share.html（显示"正在跳转..."）
-- 页面立即自动跳转到 ai.bb.bj.cn/
+- 页面立即自动跳转到 123.com/
 - 用户几乎无感知，体验如同直接跳转
 
 ### 方案二：JS-SDK（企业级）
@@ -115,3 +115,4 @@ wx.updateAppMessageShareData({
 ## 开源协议
 
 MIT License
+
